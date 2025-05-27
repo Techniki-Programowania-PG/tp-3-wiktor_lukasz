@@ -55,6 +55,82 @@ std::vector<double> generate_sawtooth_wave(double freq, double sample_rate, int 
     return result;
 }
 
+#include <complex>
+
+std::vector<std::complex<double>> dft(const std::vector<double>& input) {
+    int N = input.size();
+    std::vector<std::complex<double>> output(N);
+    for (int k = 0; k < N; ++k) {
+        std::complex<double> sum = 0.0;
+        for (int n = 0; n < N; ++n) {
+            double angle = -2 * M_PI * k * n / N;
+            sum += std::polar(input[n], angle);
+        }
+        output[k] = sum;
+    }
+    return output;
+}
+
+std::vector<double> idft(const std::vector<std::complex<double>>& input) {
+    int N = input.size();
+    std::vector<double> output(N);
+    for (int n = 0; n < N; ++n) {
+        std::complex<double> sum = 0.0;
+        for (int k = 0; k < N; ++k) {
+            double angle = 2 * M_PI * k * n / N;
+            sum += input[k] * std::polar(1.0, angle);
+        }
+        output[n] = sum.real() / N;
+    }
+    return output;
+}
+
+std::vector<double> filter_1d(const std::vector<double>& signal, const std::vector<double>& kernel) {
+    int n = signal.size();
+    int k = kernel.size();
+    std::vector<double> result(n, 0.0);
+    int offset = k / 2;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < k; ++j) {
+            int idx = i + j - offset;
+            if (idx >= 0 && idx < n) {
+                result[i] += signal[idx] * kernel[j];
+            }
+        }
+    }
+    return result;
+}
+
+std::vector<std::vector<double>> filter_2d(const std::vector<std::vector<double>>& input, const std::vector<std::vector<double>>& kernel) {
+    int rows = input.size();
+    int cols = input[0].size();
+    int k_rows = kernel.size();
+    int k_cols = kernel[0].size();
+    int row_offset = k_rows / 2;
+    int col_offset = k_cols / 2;
+
+    std::vector<std::vector<double>> output(rows, std::vector<double>(cols, 0.0));
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            double sum = 0.0;
+            for (int ki = 0; ki < k_rows; ++ki) {
+                for (int kj = 0; kj < k_cols; ++kj) {
+                    int ni = i + ki - row_offset;
+                    int nj = j + kj - col_offset;
+                    if (ni >= 0 && ni < rows && nj >= 0 && nj < cols) {
+                        sum += input[ni][nj] * kernel[ki][kj];
+                    }
+                }
+            }
+            output[i][j] = sum;
+        }
+    }
+
+    return output;
+}
+
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(_core, m) {
@@ -130,7 +206,13 @@ PYBIND11_MODULE(_core, m) {
         Returns:
             list: Sawtooth wave samples.
     )pbdoc");
-        
+
+    m.def("dft", &dft, "Compute DFT of real signal");
+    m.def("idft", &idft, "Compute inverse DFT");
+
+    m.def("filter_1d", &filter_1d, "Apply 1D filter (convolution)");
+
+    m.def("filter_2d", &filter_2d, "Apply 2D filter to 2D signal");
 
 
 
