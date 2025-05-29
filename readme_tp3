@@ -1,0 +1,7 @@
+Techniki Programowania Projekt 3
+Wiktor Sowański 203587, Łukasz Sollich 203228
+
+Wprowadzić komendy:
+cd scikit_build_example
+pip install -e .
+python visualize_signals.py
