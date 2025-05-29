@@ -5,3 +5,5 @@ Wprowadzić komendy:
 cd scikit_build_example
 pip install -e .
 python visualize_signals.py
+
+W pliku projekt3_wizualizacjasygnalow.png ukazany jest wynik dzialania programu
