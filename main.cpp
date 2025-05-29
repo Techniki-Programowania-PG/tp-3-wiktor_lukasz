@@ -20,11 +20,12 @@ int add(int i, int j) {
 
 #include <vector>
 #include <cmath>
+#include <complex>
 
 std::vector<double> generate_sine_wave(double freq, double sample_rate, int samples) {
     std::vector<double> result(samples);
     for (int i = 0; i < samples; ++i) {
-        result[i] = sin(2 * 3.14159265358979323846 * freq * i / sample_rate);
+        result[i] = sin(2 * M_PI * freq * i / sample_rate);
     }
     return result;
 }
@@ -32,7 +33,7 @@ std::vector<double> generate_sine_wave(double freq, double sample_rate, int samp
 std::vector<double> generate_cosine_wave(double freq, double sample_rate, int samples) {
     std::vector<double> result(samples);
     for (int i = 0; i < samples; ++i) {
-        result[i] = cos(2 * 3.14159265358979323846 * freq * i / sample_rate);
+        result[i] = cos(2 * M_PI * freq * i / sample_rate);
     }
     return result;
 }
@@ -54,8 +55,6 @@ std::vector<double> generate_sawtooth_wave(double freq, double sample_rate, int 
     }
     return result;
 }
-
-#include <complex>
 
 std::vector<std::complex<double>> dft(const std::vector<double>& input) {
     int N = input.size();
@@ -130,6 +129,21 @@ std::vector<std::vector<double>> filter_2d(const std::vector<std::vector<double>
     return output;
 }
 
+std::vector<double> autocorrelation(const std::vector<double>& signal) {
+    int n = signal.size();
+    std::vector<double> result(n, 0.0);
+
+    for (int lag = 0; lag < n; ++lag) {
+        double sum = 0.0;
+        for (int i = 0; i < n - lag; ++i) {
+            sum += signal[i] * signal[i + lag];
+        }
+        result[lag] = sum;
+    }
+
+    return result;
+}
+
 
 namespace py = pybind11;
 
@@ -156,55 +170,35 @@ PYBIND11_MODULE(_core, m) {
 
 	m.def("generate_sine_wave", &generate_sine_wave,
 		R"pbdoc(
-		Generate a sine wave
-
-		Args:
-			freq (float): Frequency of the sine wave.
-			sample_rate (float): Sample rate.
-			samples (int): Number of samples to generate.
-
-		Returns:
-			list: Generated sine wave samples.
+	        Generuje fal? sinusoidaln?
+			freq: Cz?stotliwo??
+			sample_rate: Cz?stotliwo?? próbkowania
+			samples: Liczba próbek do wygenerowania
 		)pbdoc");
         
     m.def("generate_cosine_wave", &generate_cosine_wave,
         R"pbdoc(
-        Generate a cosine wave
-
-        Args:
-            freq (float): Frequency of the cosine wave.
-            sample_rate (float): Sample rate.
-            samples (int): Number of samples to generate.
-
-        Returns:
-            list: Generated cosine wave samples.
+            Generuje fal? cosinusoidaln?
+			freq: Cz?stotliwo??
+			sample_rate: Cz?stotliwo?? próbkowania
+			samples: Liczba próbek do wygenerowania
     )pbdoc");
         
     m.def("generate_square_wave", &generate_square_wave,
         R"pbdoc(
-        Generate a square wave
-
-        Args:
-            freq (float): Frequency of the wave.
-            sample_rate (float): Sample rate.
-            samples (int): Number of samples.
-
-        Returns:
-            list: Square wave samples.
+            Generuje fal? prostok?tn?
+			freq: Cz?stotliwo??
+			sample_rate: Cz?stotliwo?? próbkowania
+			samples: Liczba próbek do wygenerowania
     )pbdoc");
         
 
     m.def("generate_sawtooth_wave", &generate_sawtooth_wave,
         R"pbdoc(
-        Generate a sawtooth wave
-
-        Args:
-            freq (float): Frequency of the wave.
-            sample_rate (float): Sample rate.
-            samples (int): Number of samples.
-
-        Returns:
-            list: Sawtooth wave samples.
+            Generuje fal? pi?okszta?tn?
+			freq: Cz?stotliwo??
+			sample_rate: Cz?stotliwo?? próbkowania
+			samples: Liczba próbek do wygenerowania
     )pbdoc");
 
     m.def("dft", &dft, "Compute DFT of real signal");
@@ -214,6 +208,11 @@ PYBIND11_MODULE(_core, m) {
 
     m.def("filter_2d", &filter_2d, "Apply 2D filter to 2D signal");
 
+    m.def("autocorrelation", &autocorrelation,
+        R"pbdoc(
+            Autokorelacja sygna?u
+            signal: Sygna? wej?ciowy jako lista warto?ci
+    )pbdoc");
 
 
     m.def("subtract", [](int i, int j) { return i - j; }, R"pbdoc(
